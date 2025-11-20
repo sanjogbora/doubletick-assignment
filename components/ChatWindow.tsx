@@ -112,18 +112,51 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, aiSuggestions, onSendMess
                   : 'bg-white text-gray-800 rounded-tl-none'
                   }`}
               >
-                {msg.content.includes('[SYSTEM: Sent Template -') ? (
-                  <div className="flex items-center gap-3 p-1 bg-black/5 rounded-lg min-w-[240px]">
-                    <div className="w-10 h-12 bg-red-100 rounded flex items-center justify-center text-red-500">
-                      <FileText size={24} />
+                {msg.content.includes('[SYSTEM: Sent Template -') || msg.content.includes('[SYSTEM: Scheduled Call') ? (
+                  msg.content.includes('[SYSTEM: Sent Template -') ? (
+                    // WhatsApp-style PDF Message
+                    <div className="flex flex-col gap-0 min-w-[260px] max-w-[260px]">
+                      {/* PDF Preview Thumbnail */}
+                      <div className="relative bg-gradient-to-br from-red-50 to-orange-50 rounded-t-lg p-4 border-b border-red-100">
+                        <div className="flex items-center justify-center">
+                          <div className="relative">
+                            <div className="w-16 h-20 bg-white rounded shadow-md flex items-center justify-center border border-red-100">
+                              <FileText size={32} className="text-red-500" />
+                            </div>
+                            {/* PDF Badge */}
+                            <div className="absolute -bottom-1 -right-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow">
+                              PDF
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {/* File Info */}
+                      <div className="bg-white/80 px-3 py-2 rounded-b-lg">
+                        <div className="flex items-start gap-2">
+                          <FileText size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate leading-tight text-gray-800">
+                              {msg.content.split(' - ')[1].replace(']', '')}
+                            </p>
+                            <p className="text-[10px] text-gray-500 mt-0.5">PDF Document • 1.2 MB</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 overflow-hidden">
-                      <p className="font-medium text-sm truncate">{msg.content.split(' - ')[1].replace(']', '')}</p>
-                      <p className="text-[10px] text-gray-500">PDF • 1.2 MB</p>
+                  ) : (
+                    // Scheduled Call Message
+                    <div className="flex items-center gap-2 bg-indigo-50/50 px-3 py-2 rounded-lg min-w-[240px]">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600">
+                        <Phone size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-gray-800">Call Scheduled</p>
+                        <p className="text-[10px] text-gray-500">{msg.content.split('for ')[1].replace(']', '')}</p>
+                      </div>
                     </div>
-                  </div>
+                  )
                 ) : (
-                  <p>{msg.content}</p>
+                  <p className="leading-relaxed">{msg.content}</p>
                 )}
                 <span className={`text-[10px] absolute bottom-1 right-2 ${msg.sender === MessageSender.USER ? 'text-emerald-700' : 'text-gray-400'
                   }`}>

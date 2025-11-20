@@ -211,25 +211,25 @@ export const MOCK_AI_SUGGESTIONS: Record<string, AISuggestion[]> = {
     'chat_3': [
         {
             id: 'sugg_4',
-            actionType: ActionType.SCHEDULE_FOLLOWUP,
-            title: 'Follow-up on Demo',
-            description: 'Check if Priya has questions after demo',
+            actionType: ActionType.SEND_TEMPLATE,
+            title: 'Send Product Catalog',
+            description: 'Share latest catalog for new lead',
             reasoning: {
                 trigger: 'Post-Demo (24h)',
                 intent: 'Nurture',
                 entities: ['Event: Demo']
             },
-            confidence: 75,
-            priority: PriorityLevel.LOW,
-            payload: { date: 'Tomorrow', time: '10:00' }
+            confidence: 90,
+            priority: PriorityLevel.MEDIUM,
+            payload: { templateName: 'Product_Catalog_2024.pdf' }
         }
     ],
     'chat_4': [
         {
             id: 'sugg_5',
             actionType: ActionType.SEND_TEMPLATE,
-            title: 'Re-engagement Campaign',
-            description: 'Send "We Miss You" offer',
+            title: 'Send Product Catalog',
+            description: 'Share latest catalog to re-engage',
             reasoning: {
                 trigger: 'Inactive for 14 days',
                 intent: 'Re-engagement',
@@ -237,7 +237,7 @@ export const MOCK_AI_SUGGESTIONS: Record<string, AISuggestion[]> = {
             },
             confidence: 85,
             priority: PriorityLevel.MEDIUM,
-            payload: { templateName: 'Re_Engagement_Offer.pdf' }
+            payload: { templateName: 'Product_Catalog_2024.pdf' }
         }
     ],
     'chat_5': [

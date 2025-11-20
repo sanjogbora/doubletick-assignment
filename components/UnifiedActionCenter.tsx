@@ -29,8 +29,53 @@ const UnifiedActionCenter: React.FC<UnifiedActionCenterProps> = ({
         return item.suggestion.priority === (filter === 'HIGH' ? PriorityLevel.HIGH : filter === 'MEDIUM' ? PriorityLevel.MEDIUM : PriorityLevel.LOW);
     });
 
-    // Group suggestions by Chat ID
+    // First, identify actions that multiple people need (for batch grouping)
+    const actionGroups = filteredSuggestions.reduce((acc, item) => {
+        const key = `${item.suggestion.actionType}_${item.suggestion.title}`;
+        if (!acc[key]) {
+            acc[key] = {
+                actionType: item.suggestion.actionType,
+                title: item.suggestion.title,
+                description: item.suggestion.description,
+                payload: item.suggestion.payload,
+                contacts: []
+            };
+        }
+        acc[key].contacts.push({
+            chatId: item.chatId,
+            name: item.contactName,
+            avatar: item.contactAvatar,
+            suggestionId: item.suggestion.id
+        });
+        return acc;
+    }, {} as Record<string, {
+        actionType: ActionType;
+        title: string;
+        description: string;
+        payload: any;
+        contacts: Array<{ chatId: string; name: string; avatar?: string; suggestionId: string }>
+    }>);
+
+    // Extract grouped actions (actions needed by 2+ contacts)
+    type GroupedAction = {
+        actionType: ActionType;
+        title: string;
+        description: string;
+        payload: any;
+        contacts: Array<{ chatId: string; name: string; avatar?: string; suggestionId: string }>;
+    };
+    const groupedActions = (Object.values(actionGroups) as GroupedAction[]).filter(group => group.contacts.length > 1);
+
+    // Group suggestions by Chat ID (for individual contact cards)
     const groupedByChat = filteredSuggestions.reduce((acc, item) => {
+        // Skip if this suggestion is part of a grouped action
+        const isGrouped = groupedActions.some(ga =>
+            ga.actionType === item.suggestion.actionType &&
+            ga.title === item.suggestion.title
+        );
+
+        if (isGrouped) return acc; // Don't duplicate in individual cards
+
         if (!acc[item.chatId]) {
             acc[item.chatId] = {
                 chatId: item.chatId,
@@ -91,7 +136,15 @@ const UnifiedActionCenter: React.FC<UnifiedActionCenterProps> = ({
 
                     {/* Accept All Button */}
                     {isTabMode && filteredSuggestions.length > 0 && (
-                        <button className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 whitespace-nowrap">
+                        <button
+                            onClick={() => {
+                                // Accept all filtered suggestions
+                                filteredSuggestions.forEach(item => {
+                                    onAccept(item.chatId, item.suggestion.id, item.suggestion.actionType, item.suggestion.payload);
+                                });
+                            }}
+                            className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 whitespace-nowrap hover:bg-indigo-50 px-2 py-1 rounded transition-colors"
+                        >
                             <CheckCircle size={12} />
                             Accept All
                         </button>
@@ -101,37 +154,60 @@ const UnifiedActionCenter: React.FC<UnifiedActionCenterProps> = ({
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-3 space-y-4">
-                {/* Smart Group Actions (Demo) - Updated Design */}
-                {filter === 'ALL' && (
-                    <div className="bg-white rounded-xl p-4 border border-indigo-100 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-purple-500"></div>
-
-                        <div className="flex items-center gap-2 mb-3">
-                            <Sparkles size={14} className="text-indigo-600" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Smart Opportunity</span>
-                        </div>
-
-                        <h3 className="font-bold text-gray-900 text-sm mb-1">Send Pricing PDF to Interested Leads</h3>
-                        <p className="text-gray-500 text-xs mb-4">3 leads requested pricing recently.</p>
-
-                        {/* Stacked Avatars */}
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex -space-x-2">
-                                <img className="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/150?u=zoya" alt="" />
-                                <img className="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/150?u=rahul" alt="" />
-                                <img className="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/150?u=priya" alt="" />
+                {/* Grouped Actions - Multiple contacts need same action */}
+                {groupedActions.map((group, idx) => (
+                    <div key={idx} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        {/* Group Header */}
+                        <div className="bg-indigo-50 px-3 py-2 border-b border-indigo-100 flex items-center gap-2">
+                            <div className={`p-1 rounded ${group.actionType === ActionType.SEND_TEMPLATE ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                                {getIcon(group.actionType)}
                             </div>
-                            <span className="text-xs text-gray-400">+2 others</span>
+                            <span className="text-xs font-bold text-gray-700">{group.title}</span>
+                            <span className="text-[10px] text-indigo-600 ml-auto bg-indigo-100 px-2 py-0.5 rounded-full font-medium">
+                                {group.contacts.length} contacts
+                            </span>
                         </div>
 
-                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2.5 rounded-lg shadow-sm transition-colors w-full flex items-center justify-center gap-2">
-                            <FileText size={14} />
-                            Broadcast to All 3
-                        </button>
-                    </div>
-                )}
+                        <div className="p-3">
+                            <p className="text-[10px] text-gray-500 mb-3">{group.description}</p>
 
-                {Object.values(groupedByChat).length === 0 ? (
+                            {/* Stacked Avatars + Names */}
+                            <div className="flex items-center gap-2 mb-3">
+                                <div className="flex -space-x-2">
+                                    {group.contacts.slice(0, 3).map((contact, i) => (
+                                        <img
+                                            key={i}
+                                            className="w-7 h-7 rounded-full border-2 border-white object-cover"
+                                            src={contact.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name)}&background=random`}
+                                            alt={contact.name}
+                                            title={contact.name}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="flex-1 text-[10px] text-gray-600">
+                                    {group.contacts.slice(0, 2).map(c => c.name.split(' ')[0]).join(', ')}
+                                    {group.contacts.length > 2 && ` +${group.contacts.length - 2} more`}
+                                </div>
+                            </div>
+
+                            {/* Batch Action Button */}
+                            <button
+                                onClick={() => {
+                                    // Execute for all contacts
+                                    group.contacts.forEach(contact => {
+                                        onAccept(contact.chatId, contact.suggestionId, group.actionType, group.payload);
+                                    });
+                                }}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm transition-colors w-full flex items-center justify-center gap-2"
+                            >
+                                {getIcon(group.actionType)}
+                                {group.actionType === ActionType.SEND_TEMPLATE ? 'Send' : 'Schedule'} for All ({group.contacts.length})
+                            </button>
+                        </div>
+                    </div>
+                ))}
+
+                {Object.values(groupedByChat).length === 0 && groupedActions.length === 0 ? (
                     <div className="text-center py-10 text-gray-400">
                         <Check size={48} className="mx-auto mb-3 text-gray-300" />
                         <p>All caught up!</p>
