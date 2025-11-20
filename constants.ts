@@ -83,7 +83,7 @@ export const MOCK_CHATS: Chat[] = [
             }
         ]
     },
-     {
+    {
         id: 'chat_3',
         contact: {
             id: 'c3',
@@ -99,11 +99,61 @@ export const MOCK_CHATS: Chat[] = [
         pinned: false,
         unreadCount: 2,
         messages: [
-             {
+            {
                 id: 'm31',
                 sender: MessageSender.CONTACT,
                 content: 'Thanks for the demo.',
                 timestamp: 'Yesterday',
+                type: MessageType.TEXT
+            }
+        ]
+    },
+    {
+        id: 'chat_4',
+        contact: {
+            id: 'c4',
+            name: 'Amit Kumar',
+            phone: '+91 77665 55443',
+            leadStage: LeadStage.COLD,
+            tags: ['Inactive'],
+            notes: 'No response for 2 weeks',
+            lastActive: '2 weeks ago',
+            source: 'Website',
+            avatar: 'https://i.pravatar.cc/150?u=amit'
+        },
+        pinned: false,
+        unreadCount: 0,
+        messages: [
+            {
+                id: 'm41',
+                sender: MessageSender.USER,
+                content: 'Hi Amit, just checking in.',
+                timestamp: '2 weeks ago',
+                type: MessageType.TEXT
+            }
+        ]
+    },
+    {
+        id: 'chat_5',
+        contact: {
+            id: 'c5',
+            name: 'Sneha Gupta',
+            phone: '+91 66554 44332',
+            leadStage: LeadStage.WARM,
+            tags: ['Support'],
+            notes: 'Issue with integration',
+            lastActive: '5m ago',
+            source: 'Support Ticket',
+            avatar: 'https://i.pravatar.cc/150?u=sneha'
+        },
+        pinned: false,
+        unreadCount: 1,
+        messages: [
+            {
+                id: 'm51',
+                sender: MessageSender.CONTACT,
+                content: 'My Shopify integration is not syncing orders.',
+                timestamp: '5m ago',
                 type: MessageType.TEXT
             }
         ]
@@ -133,13 +183,77 @@ export const MOCK_AI_SUGGESTIONS: Record<string, AISuggestion[]> = {
             title: 'Send Pricing PDF',
             description: 'Share Enterprise Pricing Brochure',
             reasoning: {
-                 trigger: '"send pricing PDF"',
-                 intent: 'Request Document',
-                 entities: ['Document: Pricing PDF']
+                trigger: '"send pricing PDF"',
+                intent: 'Request Document',
+                entities: ['Document: Pricing PDF']
             },
             confidence: 92,
             priority: PriorityLevel.MEDIUM,
             payload: { templateName: 'Enterprise_Pricing_v2.pdf' }
+        }
+    ],
+    'chat_2': [
+        {
+            id: 'sugg_3',
+            actionType: ActionType.SEND_TEMPLATE,
+            title: 'Send Product Catalog',
+            description: 'Share latest catalog for new lead',
+            reasoning: {
+                trigger: 'New Lead Source: Facebook Ad',
+                intent: 'Initial Engagement',
+                entities: ['Source: FB Ad']
+            },
+            confidence: 88,
+            priority: PriorityLevel.MEDIUM,
+            payload: { templateName: 'Product_Catalog_2024.pdf' }
+        }
+    ],
+    'chat_3': [
+        {
+            id: 'sugg_4',
+            actionType: ActionType.SCHEDULE_FOLLOWUP,
+            title: 'Follow-up on Demo',
+            description: 'Check if Priya has questions after demo',
+            reasoning: {
+                trigger: 'Post-Demo (24h)',
+                intent: 'Nurture',
+                entities: ['Event: Demo']
+            },
+            confidence: 75,
+            priority: PriorityLevel.LOW,
+            payload: { date: 'Tomorrow', time: '10:00' }
+        }
+    ],
+    'chat_4': [
+        {
+            id: 'sugg_5',
+            actionType: ActionType.SEND_TEMPLATE,
+            title: 'Re-engagement Campaign',
+            description: 'Send "We Miss You" offer',
+            reasoning: {
+                trigger: 'Inactive for 14 days',
+                intent: 'Re-engagement',
+                entities: ['Time: 14 days']
+            },
+            confidence: 85,
+            priority: PriorityLevel.MEDIUM,
+            payload: { templateName: 'Re_Engagement_Offer.pdf' }
+        }
+    ],
+    'chat_5': [
+        {
+            id: 'sugg_6',
+            actionType: ActionType.ESCALATE,
+            title: 'Escalate to Technical Support',
+            description: 'Integration issue requires technical assistance',
+            reasoning: {
+                trigger: '"Shopify integration not syncing"',
+                intent: 'Technical Issue',
+                entities: ['Topic: Integration']
+            },
+            confidence: 95,
+            priority: PriorityLevel.HIGH,
+            payload: { department: 'Technical Support' }
         }
     ]
 };

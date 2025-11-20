@@ -140,7 +140,7 @@ const SuggestionCard: React.FC<{
 
     return (
         <div
-            className={`p-4 hover:bg-white transition-colors relative group ${suggestion.priority === PriorityLevel.HIGH ? 'bg-red-50/30' : 'bg-white/50'}`}
+            className={`p-3 hover:bg-white transition-colors relative group ${suggestion.priority === PriorityLevel.HIGH ? 'bg-red-50/30' : 'bg-white/50'}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -149,121 +149,84 @@ const SuggestionCard: React.FC<{
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-start">
                 {/* Icon Box */}
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border ${suggestion.priority === PriorityLevel.HIGH ? 'bg-red-100 border-red-200 text-red-600' : 'bg-white border-indigo-100 text-indigo-600'}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border mt-1 ${suggestion.priority === PriorityLevel.HIGH ? 'bg-red-100 border-red-200 text-red-600' : 'bg-white border-indigo-100 text-indigo-600'}`}>
                     {getIcon(suggestion.actionType)}
                 </div>
 
                 {/* Content */}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-bold text-gray-800">{suggestion.title}</h4>
+                            <h4 className="text-sm font-bold text-gray-800 truncate">{suggestion.title}</h4>
                             {suggestion.priority === PriorityLevel.HIGH && (
-                                <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase tracking-wide">High Priority</span>
+                                <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase tracking-wide">High</span>
                             )}
                         </div>
-
-                        {/* Confidence Score & Traffic Light System */}
-                        <div className="flex items-center gap-2">
-                            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${suggestion.confidence >= 85 ? 'bg-green-50 border-green-200 text-green-700' :
-                                    suggestion.confidence >= 70 ? 'bg-yellow-50 border-yellow-200 text-yellow-700' :
-                                        'bg-orange-50 border-orange-200 text-orange-700'
-                                }`} title={`AI Confidence: ${suggestion.confidence}%`}>
-                                <div className={`w-2 h-2 rounded-full ${suggestion.confidence >= 85 ? 'bg-green-500' :
-                                        suggestion.confidence >= 70 ? 'bg-yellow-500' :
-                                            'bg-orange-500'
-                                    }`}></div>
-                                <span className="text-[10px] font-bold">{suggestion.confidence}%</span>
-                            </div>
-
-                            {/* Reasoning Depth Badge */}
-                            {suggestion.reasoning && suggestion.reasoning.entities.length > 0 && (
-                                <span className="text-[10px] text-gray-400 flex items-center gap-0.5" title="Based on explicit signals">
-                                    <Sparkles size={10} />
-                                    {suggestion.reasoning.entities.length} signals
-                                </span>
-                            )}
+                        {/* Confidence Score */}
+                        <div className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-full border ${suggestion.confidence >= 85 ? 'bg-green-50 border-green-200 text-green-700' :
+                            suggestion.confidence >= 70 ? 'bg-yellow-50 border-yellow-200 text-yellow-700' :
+                                'bg-orange-50 border-orange-200 text-orange-700'
+                            }`} title={`AI Confidence: ${suggestion.confidence}%`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${suggestion.confidence >= 85 ? 'bg-green-500' :
+                                suggestion.confidence >= 70 ? 'bg-yellow-500' :
+                                    'bg-orange-500'
+                                }`}></div>
+                            <span className="text-[10px] font-bold">{suggestion.confidence}%</span>
                         </div>
                     </div>
 
-                    <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{suggestion.description}</p>
+                    <div className="flex items-center justify-between gap-4 mt-1">
+                        <p className="text-xs text-gray-600 leading-relaxed truncate flex-1">{suggestion.description}</p>
+
+                        {/* Inline Actions */}
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                onClick={() => onDismiss(suggestion.id)}
+                                className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition-all"
+                            >
+                                Dismiss
+                            </button>
+                            <button
+                                onClick={handleAccept}
+                                className={`text-xs font-medium px-3 py-1 rounded-md shadow-sm flex items-center gap-1 transition-all active:scale-95 ${suggestion.actionType === ActionType.SCHEDULE_FOLLOWUP
+                                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200'
+                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'
+                                    }`}
+                            >
+                                {suggestion.actionType === ActionType.SCHEDULE_FOLLOWUP ? 'Review' : 'Send'}
+                            </button>
+                        </div>
+                    </div>
 
                     {/* Toggle Reasoning */}
                     <button
                         onClick={() => setShowReasoning(!showReasoning)}
-                        className="mt-2 flex items-center gap-1 text-[10px] font-medium text-indigo-500 hover:text-indigo-700 transition-colors"
+                        className="mt-1 flex items-center gap-1 text-[10px] font-medium text-indigo-400 hover:text-indigo-600 transition-colors"
                     >
-                        <Info size={12} />
+                        <Info size={10} />
                         {showReasoning ? 'Hide Logic' : 'Why this suggestion?'}
                     </button>
 
                     {/* Reasoning Drawer */}
                     {showReasoning && suggestion.reasoning && (
-                        <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-100 text-[11px] text-slate-600 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                        <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-100 text-[10px] text-slate-600 space-y-1 animate-in slide-in-from-top-2 duration-200">
                             <div className="flex gap-2 items-start">
-                                <span className="font-semibold text-slate-800 w-14 shrink-0">Trigger:</span>
+                                <span className="font-semibold text-slate-800 w-10 shrink-0">Trigger:</span>
                                 <div className="flex-1">
-                                    <span className="font-mono bg-yellow-50 text-yellow-800 px-1.5 py-0.5 rounded border border-yellow-100">{suggestion.reasoning.trigger}</span>
-                                    <p className="text-[10px] text-slate-400 mt-1">Detected in recent message</p>
+                                    <span className="font-mono bg-yellow-50 text-yellow-800 px-1 py-0.5 rounded border border-yellow-100">{suggestion.reasoning.trigger}</span>
                                 </div>
                             </div>
                             <div className="flex gap-2 items-start">
-                                <span className="font-semibold text-slate-800 w-14 shrink-0">Intent:</span>
+                                <span className="font-semibold text-slate-800 w-10 shrink-0">Intent:</span>
                                 <div className="flex-1">
-                                    <span className="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded">{suggestion.reasoning.intent}</span>
-                                </div>
-                            </div>
-                            <div className="flex gap-2 items-start">
-                                <span className="font-semibold text-slate-800 w-14 shrink-0">Signals:</span>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {suggestion.reasoning.entities.map((e, i) => (
-                                        <span key={i} className="bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-700 shadow-sm flex items-center gap-1">
-                                            <span className="w-1 h-1 rounded-full bg-indigo-400"></span>
-                                            {e}
-                                        </span>
-                                    ))}
+                                    <span className="text-indigo-600 font-bold bg-indigo-50 px-1 py-0.5 rounded">{suggestion.reasoning.intent}</span>
                                 </div>
                             </div>
                         </div>
                     )}
                 </div>
-            </div>
-
-            {/* Actions Footer */}
-            <div className="mt-3 flex items-center justify-end gap-2">
-                <button
-                    onClick={() => onDismiss(suggestion.id)}
-                    className="text-xs text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 flex items-center gap-1 transition-all"
-                >
-                    Dismiss
-                </button>
-
-                <button
-                    onClick={() => onEdit(suggestion.id)}
-                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-100"
-                >
-                    Edit
-                </button>
-
-                <button
-                    onClick={handleAccept}
-                    className={`text-xs font-medium px-4 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-all active:scale-95 ${suggestion.actionType === ActionType.SCHEDULE_FOLLOWUP
-                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200'
-                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'
-                        }`}
-                >
-                    {suggestion.actionType === ActionType.SCHEDULE_FOLLOWUP ? (
-                        <>
-                            <Calendar size={14} /> Review & Schedule
-                        </>
-                    ) : (
-                        <>
-                            <Check size={14} /> Send Now
-                        </>
-                    )}
-                </button>
             </div>
         </div>
     );

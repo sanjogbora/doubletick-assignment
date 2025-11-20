@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Paperclip, Send, Smile, MoreVertical, Phone, Video, Search, Mic } from 'lucide-react';
+import { Paperclip, Send, Smile, MoreVertical, Phone, Video, Search, Mic, FileText } from 'lucide-react';
 import { Chat, MessageSender, MessageType, AISuggestion, ActionType } from '../types';
 import AIActionPanel from './AIActionPanel';
 
@@ -9,9 +9,10 @@ interface ChatWindowProps {
   aiSuggestions: AISuggestion[];
   onSendMessage: (text: string) => void;
   onAIAccept?: (id: string, action: ActionType, payload: any) => void;
+  onProfileClick?: () => void;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ chat, aiSuggestions, onSendMessage, onAIAccept }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ chat, aiSuggestions, onSendMessage, onAIAccept, onProfileClick }) => {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
   const [isAIPanelMinimized, setIsAIPanelMinimized] = useState(false);
@@ -76,7 +77,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, aiSuggestions, onSendMess
     <div className="flex-1 flex flex-col bg-[#efe7dd] relative min-w-[400px]">
       {/* Chat Header */}
       <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 flex-shrink-0 z-10 shadow-sm relative">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors" onClick={onProfileClick}>
           <img src={chat.contact.avatar} alt={chat.contact.name} className="w-10 h-10 rounded-full" />
           <div>
             <h3 className="font-semibold text-gray-800">{chat.contact.name}</h3>
@@ -111,19 +112,29 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, aiSuggestions, onSendMess
                   : 'bg-white text-gray-800 rounded-tl-none'
                   }`}
               >
-                <p className="leading-relaxed pb-2">{msg.content}</p>
-                <span className="text-[10px] text-gray-500 absolute bottom-1 right-2 flex items-center gap-1">
+                {msg.content.includes('[SYSTEM: Sent Template -') ? (
+                  <div className="flex items-center gap-3 p-1 bg-black/5 rounded-lg min-w-[240px]">
+                    <div className="w-10 h-12 bg-red-100 rounded flex items-center justify-center text-red-500">
+                      <FileText size={24} />
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="font-medium text-sm truncate">{msg.content.split(' - ')[1].replace(']', '')}</p>
+                      <p className="text-[10px] text-gray-500">PDF • 1.2 MB</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p>{msg.content}</p>
+                )}
+                <span className={`text-[10px] absolute bottom-1 right-2 ${msg.sender === MessageSender.USER ? 'text-emerald-700' : 'text-gray-400'
+                  }`}>
                   {msg.timestamp}
-                  {msg.sender === MessageSender.USER && <span className="text-blue-400">✓✓</span>}
                 </span>
               </div>
             </div>
           ))}
-          <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* AI Action Panel */}
       <AIActionPanel
         suggestions={suggestions}
         onAccept={handleAIAcceptWrapper}

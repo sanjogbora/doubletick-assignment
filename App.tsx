@@ -8,7 +8,7 @@ import ScheduleModal from './components/ScheduleModal';
 import { MOCK_CHATS, MOCK_AI_SUGGESTIONS } from './constants';
 import { Chat, Message, MessageSender, MessageType, AISuggestion, ActionType } from './types';
 
-import UnifiedActionCenter from './components/UnifiedActionCenter';
+import LeftPanel from './components/LeftPanel';
 
 const App: React.FC = () => {
   // State
@@ -17,7 +17,7 @@ const App: React.FC = () => {
 
   // Modal State
   const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [isActionCenterOpen, setActionCenterOpen] = useState(false);
+  const [isRightPanelOpen, setRightPanelOpen] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState<AISuggestion | null>(null);
 
   // Derived State
@@ -32,6 +32,7 @@ const App: React.FC = () => {
     return MOCK_AI_SUGGESTIONS[chatId].map(suggestion => ({
       chatId,
       contactName: chat?.contact.name || 'Unknown',
+      contactAvatar: chat?.contact.avatar,
       suggestion
     }));
   });
@@ -75,8 +76,9 @@ const App: React.FC = () => {
       setScheduleModalOpen(true);
     } else if (action === ActionType.SEND_TEMPLATE) {
       // Direct Action
+      // Check if it's a PDF template and send a PDF message type if possible, or formatted text
+      // For now, we'll send a formatted text that ChatWindow will render specially
       handleSendMessage(`[SYSTEM: Sent Template - ${payload.templateName}]`);
-      // Logic to remove suggestion or mark done would go here
     }
   };
 
@@ -99,22 +101,16 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen w-screen bg-gray-50 overflow-hidden font-sans text-gray-900">
       {/* 1. Left Sidebar (Navigation) */}
-      <Sidebar onToggleActionCenter={() => setActionCenterOpen(!isActionCenterOpen)} />
+      <Sidebar />
 
-      {/* Action Center Drawer */}
-      <UnifiedActionCenter
-        isOpen={isActionCenterOpen}
-        onClose={() => setActionCenterOpen(false)}
-        allSuggestions={allSuggestions}
-        onAccept={handleGlobalAccept}
-        onDismiss={handleGlobalDismiss}
-      />
-
-      {/* 2. Chat List (Inbox) */}
-      <ChatList
+      {/* 2. Left Panel (Tabs: Messages / Action Center) */}
+      <LeftPanel
         chats={chats}
         activeChatId={activeChatId}
         onSelectChat={setActiveChatId}
+        allSuggestions={allSuggestions}
+        onAcceptAction={handleGlobalAccept}
+        onDismissAction={handleGlobalDismiss}
       />
 
       {/* 3. Main Chat Window */}
@@ -123,10 +119,11 @@ const App: React.FC = () => {
         aiSuggestions={currentSuggestions}
         onSendMessage={handleSendMessage}
         onAIAccept={handleAIAccept}
+        onProfileClick={() => setRightPanelOpen(!isRightPanelOpen)}
       />
 
       {/* 4. Right Panel (Details) */}
-      <RightPanel contact={activeChat?.contact || null} />
+      {isRightPanelOpen && <RightPanel contact={activeChat?.contact || null} />}
 
       {/* 5. Modals */}
       <ScheduleModal
