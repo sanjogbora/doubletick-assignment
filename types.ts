@@ -1,3 +1,4 @@
+
 export enum MessageType {
     TEXT = 'text',
     TEMPLATE = 'template',
@@ -63,12 +64,18 @@ export enum ActionType {
     ESCALATE = 'escalate'
 }
 
+export interface AIReasoning {
+    trigger: string; // The text that triggered this
+    intent: string; // The classified intent
+    entities: string[]; // Extracted data points
+}
+
 export interface AISuggestion {
     id: string;
     actionType: ActionType;
     title: string;
     description: string;
-    rationale: string; // "Why did AI suggest this?"
+    reasoning: AIReasoning; // Detailed explanation
     confidence: number; // 0 to 100
     priority: PriorityLevel;
     payload?: any; // Data needed to execute (e.g., template ID, date)

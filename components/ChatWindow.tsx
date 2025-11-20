@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Paperclip, Send, Smile, MoreVertical, Phone, Video, Search, Mic } from 'lucide-react';
 import { Chat, MessageSender, MessageType, AISuggestion, ActionType } from '../types';
@@ -7,9 +8,10 @@ interface ChatWindowProps {
   chat: Chat | null;
   aiSuggestions: AISuggestion[];
   onSendMessage: (text: string) => void;
+  onAIAccept?: (id: string, action: ActionType, payload: any) => void;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ chat, aiSuggestions, onSendMessage }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ chat, aiSuggestions, onSendMessage, onAIAccept }) => {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -48,16 +50,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, aiSuggestions, onSendMess
       }
   }
 
-  const handleAIAccept = (id: string, action: ActionType, payload: any) => {
-      // Simulate action
-      if (action === ActionType.SEND_TEMPLATE) {
-          onSendMessage(`[SENT TEMPLATE: ${payload.templateName}]`);
-      } else if (action === ActionType.SCHEDULE_FOLLOWUP) {
-           // In a real app, this would open a modal or call an API
-           alert(`Scheduled call for ${payload.date} at ${payload.time}`);
+  const handleAIAcceptWrapper = (id: string, action: ActionType, payload: any) => {
+      if (onAIAccept) {
+          onAIAccept(id, action, payload);
+      } else {
+        // Fallback for internal handling if no prop provided (backward compatibility)
+        if (action === ActionType.SEND_TEMPLATE) {
+            onSendMessage(`[SENT TEMPLATE: ${payload.templateName}]`);
+        } 
+        setSuggestions(prev => prev.filter(s => s.id !== id));
       }
-      // Remove suggestion after action
-      setSuggestions(prev => prev.filter(s => s.id !== id));
   };
 
   const handleAIDismiss = (id: string) => {
@@ -90,7 +92,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, aiSuggestions, onSendMess
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-4 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-repeat bg-opacity-10 relative">
+      <div className="flex-1 overflow-y-auto p-4 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-repeat bg-opacity-10 relative scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
         <div className="flex flex-col gap-2 pb-20">
             {/* Date Separator */}
             <div className="flex justify-center my-4">
@@ -125,7 +127,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, aiSuggestions, onSendMess
       <div className="absolute bottom-[70px] left-4 right-4 z-20">
          <AIActionPanel 
             suggestions={suggestions} 
-            onAccept={handleAIAccept}
+            onAccept={handleAIAcceptWrapper}
             onDismiss={handleAIDismiss}
             onEdit={handleAIEdit}
          />
