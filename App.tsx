@@ -8,20 +8,33 @@ import ScheduleModal from './components/ScheduleModal';
 import { MOCK_CHATS, MOCK_AI_SUGGESTIONS } from './constants';
 import { Chat, Message, MessageSender, MessageType, AISuggestion, ActionType } from './types';
 
+import UnifiedActionCenter from './components/UnifiedActionCenter';
+
 const App: React.FC = () => {
   // State
   const [chats, setChats] = useState<Chat[]>(MOCK_CHATS);
   const [activeChatId, setActiveChatId] = useState<string | null>('chat_1');
-  
+
   // Modal State
   const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [isActionCenterOpen, setActionCenterOpen] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState<AISuggestion | null>(null);
 
   // Derived State
   const activeChat = chats.find(c => c.id === activeChatId) || null;
-  
+
   // In a real app, these would be fetched from a backend/AI service
   const currentSuggestions = activeChatId ? (MOCK_AI_SUGGESTIONS[activeChatId] || []) : [];
+
+  // Aggregate all suggestions for Action Center
+  const allSuggestions = Object.keys(MOCK_AI_SUGGESTIONS).flatMap(chatId => {
+    const chat = chats.find(c => c.id === chatId);
+    return MOCK_AI_SUGGESTIONS[chatId].map(suggestion => ({
+      chatId,
+      contactName: chat?.contact.name || 'Unknown',
+      suggestion
+    }));
+  });
 
   // Handlers
   const handleSendMessage = (text: string) => {
@@ -47,40 +60,66 @@ const App: React.FC = () => {
   };
 
   const handleAIAccept = (id: string, action: ActionType, payload: any) => {
-      const suggestion = currentSuggestions.find(s => s.id === id);
+    // Find suggestion across all chats if needed, or use current
+    let suggestion = currentSuggestions.find(s => s.id === id);
 
-      if (action === ActionType.SCHEDULE_FOLLOWUP) {
-          // Open Modal
-          setActiveSuggestion(suggestion || null);
-          setScheduleModalOpen(true);
-      } else if (action === ActionType.SEND_TEMPLATE) {
-          // Direct Action
-          handleSendMessage(`[SYSTEM: Sent Template - ${payload.templateName}]`);
-          // Logic to remove suggestion or mark done would go here
-      }
+    if (!suggestion) {
+      // Search in all suggestions
+      const found = allSuggestions.find(s => s.suggestion.id === id);
+      if (found) suggestion = found.suggestion;
+    }
+
+    if (action === ActionType.SCHEDULE_FOLLOWUP) {
+      // Open Modal
+      setActiveSuggestion(suggestion || null);
+      setScheduleModalOpen(true);
+    } else if (action === ActionType.SEND_TEMPLATE) {
+      // Direct Action
+      handleSendMessage(`[SYSTEM: Sent Template - ${payload.templateName}]`);
+      // Logic to remove suggestion or mark done would go here
+    }
+  };
+
+  const handleGlobalAccept = (chatId: string, suggestionId: string, action: ActionType, payload: any) => {
+    setActiveChatId(chatId); // Switch to that chat
+    handleAIAccept(suggestionId, action, payload);
+  };
+
+  const handleGlobalDismiss = (chatId: string, suggestionId: string) => {
+    console.log(`Dismissed suggestion ${suggestionId} for chat ${chatId}`);
+    // In real app, update state to remove suggestion
   };
 
   const handleConfirmSchedule = (details: any) => {
-      handleSendMessage(`[SYSTEM: Scheduled Call for ${details.date} at ${details.time}]`);
-      setScheduleModalOpen(false);
-      // Here we would update the backend to remove the suggestion
+    handleSendMessage(`[SYSTEM: Scheduled Call for ${details.date} at ${details.time}]`);
+    setScheduleModalOpen(false);
+    // Here we would update the backend to remove the suggestion
   };
 
   return (
     <div className="flex h-screen w-screen bg-gray-50 overflow-hidden font-sans text-gray-900">
       {/* 1. Left Sidebar (Navigation) */}
-      <Sidebar />
+      <Sidebar onToggleActionCenter={() => setActionCenterOpen(!isActionCenterOpen)} />
+
+      {/* Action Center Drawer */}
+      <UnifiedActionCenter
+        isOpen={isActionCenterOpen}
+        onClose={() => setActionCenterOpen(false)}
+        allSuggestions={allSuggestions}
+        onAccept={handleGlobalAccept}
+        onDismiss={handleGlobalDismiss}
+      />
 
       {/* 2. Chat List (Inbox) */}
-      <ChatList 
-        chats={chats} 
-        activeChatId={activeChatId} 
-        onSelectChat={setActiveChatId} 
+      <ChatList
+        chats={chats}
+        activeChatId={activeChatId}
+        onSelectChat={setActiveChatId}
       />
 
       {/* 3. Main Chat Window */}
-      <ChatWindow 
-        chat={activeChat} 
+      <ChatWindow
+        chat={activeChat}
         aiSuggestions={currentSuggestions}
         onSendMessage={handleSendMessage}
         onAIAccept={handleAIAccept}
@@ -90,19 +129,19 @@ const App: React.FC = () => {
       <RightPanel contact={activeChat?.contact || null} />
 
       {/* 5. Modals */}
-      <ScheduleModal 
+      <ScheduleModal
         isOpen={isScheduleModalOpen}
         onClose={() => setScheduleModalOpen(false)}
         onConfirm={handleConfirmSchedule}
         suggestion={activeSuggestion}
       />
-      
+
       {/* Mobile Overlay for small screens warning */}
       <div className="lg:hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center text-white p-8 text-center backdrop-blur-md md:hidden">
-          <div>
-              <h2 className="text-xl font-bold mb-2">Desktop Preview Only</h2>
-              <p>The prototype is optimized for the Web Interface requirement. Please view on a larger screen.</p>
-          </div>
+        <div>
+          <h2 className="text-xl font-bold mb-2">Desktop Preview Only</h2>
+          <p>The prototype is optimized for the Web Interface requirement. Please view on a larger screen.</p>
+        </div>
       </div>
     </div>
   );

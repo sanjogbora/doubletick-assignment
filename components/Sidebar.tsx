@@ -1,12 +1,16 @@
 import React from 'react';
 import { Home, MessageSquare, Users, BarChart2, Settings, BookOpen, HelpCircle, Zap } from 'lucide-react';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  onToggleActionCenter?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onToggleActionCenter }) => {
   return (
     <div className="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-4 h-full flex-shrink-0 z-20">
       <div className="mb-8">
         <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-           <Zap size={24} />
+          <Zap size={24} />
         </div>
       </div>
 
@@ -14,6 +18,18 @@ const Sidebar: React.FC = () => {
         <NavItem icon={<Home size={20} />} label="Home" />
         <NavItem icon={<MessageSquare size={20} />} label="Inbox" active />
         <NavItem icon={<Users size={20} />} label="Contacts" />
+
+        {/* Action Center Toggle */}
+        <div className="relative group flex items-center justify-center w-full cursor-pointer text-gray-500 hover:text-emerald-600" onClick={onToggleActionCenter}>
+          <div className="relative">
+            <Zap size={20} />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+          </div>
+          <span className="absolute left-14 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+            Action Center
+          </span>
+        </div>
+
         <NavItem icon={<BookOpen size={20} />} label="Broadcast" />
         <NavItem icon={<BarChart2 size={20} />} label="Reports" />
         <NavItem icon={<Settings size={20} />} label="Settings" />
@@ -22,7 +38,7 @@ const Sidebar: React.FC = () => {
       <div className="mt-auto flex flex-col gap-6 w-full">
         <NavItem icon={<HelpCircle size={20} />} label="Help" />
         <div className="w-8 h-8 rounded-full bg-purple-100 border border-purple-300 flex items-center justify-center text-purple-700 text-xs font-bold mx-auto cursor-pointer" title="Profile">
-            RP
+          RP
         </div>
       </div>
     </div>
