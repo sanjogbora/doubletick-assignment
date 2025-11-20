@@ -1,0 +1,5 @@
+{
+  "name": "Converso - AI CRM Prototype",
+  "description": "High-fidelity prototype for the AI Suggested Actions feature within the Converso (DoubleTick-inspired) CRM platform. Focuses on helping agents manage follow-ups and next best actions.",
+  "requestFramePermissions": []
+}
