@@ -1,11 +1,31 @@
-      </div >
-  <div className="mt-auto flex flex-col gap-6 w-full">
-    <NavItem icon={<HelpCircle size={20} />} label="Help" />
-    <div className="w-8 h-8 rounded-full bg-purple-100 border border-purple-300 flex items-center justify-center text-purple-700 text-xs font-bold mx-auto cursor-pointer" title="Profile">
-      RP
+import React from 'react';
+import { Home, MessageSquare, Users, BarChart2, Settings, BookOpen, HelpCircle, Zap } from 'lucide-react';
+
+const Sidebar: React.FC = () => {
+  return (
+    <div className="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-4 h-full flex-shrink-0 z-20">
+      <div className="mb-8">
+        <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+          <Zap size={24} />
+        </div>
+      </div>
+
+      <nav className="flex-1 flex flex-col gap-6 w-full">
+        <NavItem icon={<Home size={20} />} label="Home" />
+        <NavItem icon={<MessageSquare size={20} />} label="Inbox" active />
+        <NavItem icon={<Users size={20} />} label="Contacts" />
+        <NavItem icon={<BookOpen size={20} />} label="Broadcast" />
+        <NavItem icon={<BarChart2 size={20} />} label="Reports" />
+        <NavItem icon={<Settings size={20} />} label="Settings" />
+      </nav>
+
+      <div className="mt-auto flex flex-col gap-6 w-full">
+        <NavItem icon={<HelpCircle size={20} />} label="Help" />
+        <div className="w-8 h-8 rounded-full bg-purple-100 border border-purple-300 flex items-center justify-center text-purple-700 text-xs font-bold mx-auto cursor-pointer" title="Profile">
+          RP
+        </div>
+      </div>
     </div>
-  </div>
-    </div >
   );
 };
 
