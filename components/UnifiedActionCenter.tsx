@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Check, Clock, AlertCircle, FileText, Filter, Search, ArrowRight, Calendar, Users, Sparkles, CheckCircle, Zap, Target, DollarSign } from 'lucide-react';
 import { AISuggestion, PriorityLevel, ActionType, Chat } from '../types';
 import { MOCK_PROACTIVE_SUGGESTIONS } from '../constants';
+import TemplateReviewModal from './TemplateReviewModal';
+import ProactiveActionModal from './ProactiveActionModal';
 
 interface UnifiedActionCenterProps {
     isOpen: boolean;
@@ -22,6 +24,22 @@ const UnifiedActionCenter: React.FC<UnifiedActionCenterProps> = ({
 }) => {
     const [filter, setFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
     const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PROACTIVE'>('ACTIVE');
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [reviewingTemplate, setReviewingTemplate] = useState<string>('');
+    const [reviewingAction, setReviewingAction] = useState<{
+        chatId: string;
+        suggestionId: string;
+        actionType: ActionType;
+        payload: any;
+    } | null>(null);
+    const [isProactiveModalOpen, setIsProactiveModalOpen] = useState(false);
+    const [proactiveAction, setProactiveAction] = useState<{
+        suggestion: AISuggestion;
+        contactName: string;
+        contactAvatar?: string;
+        chatId: string;
+        suggestionId: string;
+    } | null>(null);
 
     if (!isOpen && !isTabMode) return null;
 
@@ -219,15 +237,28 @@ const UnifiedActionCenter: React.FC<UnifiedActionCenterProps> = ({
                             {/* Batch Action Button */}
                             <button
                                 onClick={() => {
-                                    // Execute for all contacts
-                                    group.contacts.forEach(contact => {
-                                        onAccept(contact.chatId, contact.suggestionId, group.actionType, group.payload);
-                                    });
+                                    if (group.actionType === ActionType.SEND_TEMPLATE) {
+                                        // For templates, open review modal for the first contact
+                                        const firstContact = group.contacts[0];
+                                        setReviewingTemplate(group.payload.templateName || 'Document.pdf');
+                                        setReviewingAction({
+                                            chatId: firstContact.chatId,
+                                            suggestionId: firstContact.suggestionId,
+                                            actionType: group.actionType,
+                                            payload: group.payload
+                                        });
+                                        setIsReviewModalOpen(true);
+                                    } else {
+                                        // Execute for all contacts
+                                        group.contacts.forEach(contact => {
+                                            onAccept(contact.chatId, contact.suggestionId, group.actionType, group.payload);
+                                        });
+                                    }
                                 }}
                                 className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm transition-colors w-full flex items-center justify-center gap-2"
                             >
                                 {getIcon(group.actionType, group.title)}
-                                {group.actionType === ActionType.SEND_TEMPLATE ? 'Send' : 'Schedule'} for All ({group.contacts.length})
+                                {group.actionType === ActionType.SEND_TEMPLATE ? 'Review & Send' : 'Schedule'} for All ({group.contacts.length})
                             </button>
                         </div>
                     </div>
@@ -279,10 +310,33 @@ const UnifiedActionCenter: React.FC<UnifiedActionCenterProps> = ({
                                                         Dismiss
                                                     </button>
                                                     <button
-                                                        onClick={() => onAccept(chatId, suggestion.id, suggestion.actionType, suggestion.payload)}
+                                                        onClick={() => {
+                                                            if (activeTab === 'PROACTIVE') {
+                                                                // Open proactive modal for detailed review
+                                                                setProactiveAction({
+                                                                    suggestion,
+                                                                    contactName,
+                                                                    contactAvatar,
+                                                                    chatId,
+                                                                    suggestionId: suggestion.id
+                                                                });
+                                                                setIsProactiveModalOpen(true);
+                                                            } else if (suggestion.actionType === ActionType.SEND_TEMPLATE) {
+                                                                setReviewingTemplate(suggestion.payload.templateName || 'Document.pdf');
+                                                                setReviewingAction({
+                                                                    chatId,
+                                                                    suggestionId: suggestion.id,
+                                                                    actionType: suggestion.actionType,
+                                                                    payload: suggestion.payload
+                                                                });
+                                                                setIsReviewModalOpen(true);
+                                                            } else {
+                                                                onAccept(chatId, suggestion.id, suggestion.actionType, suggestion.payload);
+                                                            }
+                                                        }}
                                                         className="text-[10px] bg-gray-900 hover:bg-black text-white px-2.5 py-1.5 rounded font-medium transition-colors"
                                                     >
-                                                        {suggestion.title.includes('Priorities') ? 'View' : (suggestion.actionType === ActionType.SCHEDULE_FOLLOWUP ? 'Schedule' : 'Execute')}
+                                                        {activeTab === 'PROACTIVE' ? 'Review' : (suggestion.title.includes('Priorities') ? 'View' : (suggestion.actionType === ActionType.SEND_TEMPLATE ? 'Review' : (suggestion.actionType === ActionType.SCHEDULE_FOLLOWUP ? 'Schedule' : 'Execute')))}
                                                     </button>
                                                 </div>
                                             </div>
@@ -299,6 +353,62 @@ const UnifiedActionCenter: React.FC<UnifiedActionCenterProps> = ({
             < div className="p-3 border-t border-gray-100 bg-white text-[10px] text-gray-400 text-center" >
                 {filteredSuggestions.length} pending actions total
             </div >
+
+            {/* Template Review Modal */}
+            <TemplateReviewModal
+                isOpen={isReviewModalOpen}
+                onClose={() => {
+                    setIsReviewModalOpen(false);
+                    setReviewingAction(null);
+                }}
+                templateName={reviewingTemplate}
+                onConfirm={(selectedTemplate) => {
+                    if (reviewingAction) {
+                        const updatedPayload = {
+                            ...reviewingAction.payload,
+                            templateName: selectedTemplate
+                        };
+                        onAccept(
+                            reviewingAction.chatId,
+                            reviewingAction.suggestionId,
+                            reviewingAction.actionType,
+                            updatedPayload
+                        );
+                    }
+                    setIsReviewModalOpen(false);
+                    setReviewingAction(null);
+                }}
+            />
+
+            {/* Proactive Action Modal */}
+            <ProactiveActionModal
+                isOpen={isProactiveModalOpen}
+                onClose={() => {
+                    setIsProactiveModalOpen(false);
+                    setProactiveAction(null);
+                }}
+                suggestion={proactiveAction?.suggestion || null}
+                contactName={proactiveAction?.contactName || ''}
+                contactAvatar={proactiveAction?.contactAvatar}
+                onConfirm={(message, templateName, options) => {
+                    if (proactiveAction) {
+                        const updatedPayload = {
+                            ...proactiveAction.suggestion.payload,
+                            message,
+                            templateName,
+                            ...options
+                        };
+                        onAccept(
+                            proactiveAction.chatId,
+                            proactiveAction.suggestionId,
+                            proactiveAction.suggestion.actionType,
+                            updatedPayload
+                        );
+                    }
+                    setIsProactiveModalOpen(false);
+                    setProactiveAction(null);
+                }}
+            />
         </div >
     );
 };
