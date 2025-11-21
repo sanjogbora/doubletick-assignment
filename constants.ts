@@ -257,3 +257,82 @@ export const MOCK_AI_SUGGESTIONS: Record<string, AISuggestion[]> = {
         }
     ]
 };
+
+export const MOCK_PROACTIVE_SUGGESTIONS = [
+    {
+        chatId: 'chat_4', // Amit
+        contactName: 'Amit Kumar',
+        contactAvatar: 'https://i.pravatar.cc/150?u=amit',
+        suggestion: {
+            id: 'pro_1',
+            actionType: ActionType.SEND_TEMPLATE,
+            title: 'Inactive Lead - Re-engage Now',
+            description: 'No contact in 14 days. Lead at risk of going cold.',
+            reasoning: {
+                trigger: 'Last message > 14 days',
+                intent: 'Re-engagement',
+                entities: ['Time: 14 days']
+            },
+            confidence: 85,
+            priority: PriorityLevel.HIGH,
+            payload: { templateName: 'Re_Engagement_Template.pdf' }
+        }
+    },
+    {
+        chatId: 'chat_5', // Sneha
+        contactName: 'Sneha Gupta',
+        contactAvatar: 'https://i.pravatar.cc/150?u=sneha',
+        suggestion: {
+            id: 'pro_2',
+            actionType: ActionType.ESCALATE,
+            title: 'Frustration Detected - Escalate',
+            description: 'Technical issue + frustration keywords. Prevent churn.',
+            reasoning: {
+                trigger: 'Frustration keywords detected',
+                intent: 'Churn Prevention',
+                entities: ['Sentiment: Negative']
+            },
+            confidence: 95,
+            priority: PriorityLevel.HIGH,
+            payload: { department: 'Technical Support', reason: 'Frustration detected' }
+        }
+    },
+    {
+        chatId: 'dashboard', // Special case
+        contactName: 'System',
+        contactAvatar: 'https://ui-avatars.com/api/?name=System&background=6366f1&color=fff',
+        suggestion: {
+            id: 'pro_3',
+            actionType: ActionType.SCHEDULE_FOLLOWUP, // Using Schedule as placeholder for "View"
+            title: 'Your Top 3 Priorities Today',
+            description: 'Focus on highest-value tasks first',
+            reasoning: {
+                trigger: 'Daily Login',
+                intent: 'Productivity',
+                entities: ['Urgency: High']
+            },
+            confidence: 100,
+            priority: PriorityLevel.MEDIUM,
+            payload: { view: 'priority_dashboard' }
+        }
+    },
+    {
+        chatId: 'chat_3', // Priya
+        contactName: 'Priya Singh',
+        contactAvatar: 'https://i.pravatar.cc/150?u=priya',
+        suggestion: {
+            id: 'pro_4',
+            actionType: ActionType.SEND_TEMPLATE,
+            title: 'Perfect Timing - Post-Demo Upsell',
+            description: 'Demo completed 24h ago. Conversion window active.',
+            reasoning: {
+                trigger: 'Demo + 24h',
+                intent: 'Upsell',
+                entities: ['Event: Demo']
+            },
+            confidence: 78,
+            priority: PriorityLevel.MEDIUM,
+            payload: { templateName: 'Enterprise_Comparison.pdf' }
+        }
+    }
+];

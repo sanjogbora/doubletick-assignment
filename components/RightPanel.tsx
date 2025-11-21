@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { User, Phone, Mail, Tag, Clock, ChevronDown, Edit2, Save, Sparkles } from 'lucide-react';
+import { User, Phone, Mail, Tag, Clock, ChevronDown, Edit2, Save, Sparkles, Sparkle } from 'lucide-react';
 import { Contact, LeadStage } from '../types';
 
 interface RightPanelProps {
@@ -33,27 +33,24 @@ const RightPanel: React.FC<RightPanelProps> = ({ contact }) => {
                 </div>
 
                 {/* AI Smart Insights */}
-                <div className="mb-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-2 opacity-10">
-                        <Sparkles size={48} />
-                    </div>
+                <div className="mb-6 bg-white rounded-xl p-4 border border-indigo-100 relative overflow-hidden shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
-                        <Sparkles size={14} className="text-indigo-600" />
+                        <Sparkle size={14} className="text-indigo-600" />
                         <span className="text-xs font-bold text-indigo-800 uppercase tracking-wider">AI Insights</span>
                     </div>
 
                     <div className="space-y-3 relative z-10">
                         <div className="flex justify-between items-center">
                             <span className="text-xs text-gray-600">Churn Risk</span>
-                            <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Low</span>
+                            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">Low</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-xs text-gray-600">Sentiment</span>
                             <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                                Positive <span className="text-lg leading-none">😊</span>
+                                Positive
                             </span>
                         </div>
-                        <div className="pt-2 border-t border-indigo-100/50">
+                        <div className="pt-2 border-t border-gray-100">
                             <span className="text-[10px] text-indigo-400 uppercase font-bold">Next Best Action</span>
                             <p className="text-xs text-indigo-900 font-medium mt-0.5">Send "Green Tick Guide" to nurture interest.</p>
                         </div>

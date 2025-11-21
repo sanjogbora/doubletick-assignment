@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatList from './components/ChatList';
 import ChatWindow from './components/ChatWindow';
 import RightPanel from './components/RightPanel';
 import ScheduleModal from './components/ScheduleModal';
+import EscalationModal from './components/EscalationModal';
 import { MOCK_CHATS, MOCK_AI_SUGGESTIONS } from './constants';
 import { Chat, Message, MessageSender, MessageType, AISuggestion, ActionType } from './types';
 
@@ -15,21 +15,28 @@ const App: React.FC = () => {
   const [chats, setChats] = useState<Chat[]>(MOCK_CHATS);
   const [activeChatId, setActiveChatId] = useState<string | null>('chat_1');
 
+  // Initialize suggestions state from mock data
+  const [aiSuggestionsMap, setAiSuggestionsMap] = useState<Record<string, AISuggestion[]>>(MOCK_AI_SUGGESTIONS);
+
   // Modal State
   const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [isEscalationModalOpen, setEscalationModalOpen] = useState(false);
   const [isRightPanelOpen, setRightPanelOpen] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState<AISuggestion | null>(null);
+
+  // Navigation State
+  const [activeView, setActiveView] = useState<'MESSAGES' | 'ACTIONS'>('MESSAGES');
 
   // Derived State
   const activeChat = chats.find(c => c.id === activeChatId) || null;
 
-  // In a real app, these would be fetched from a backend/AI service
-  const currentSuggestions = activeChatId ? (MOCK_AI_SUGGESTIONS[activeChatId] || []) : [];
+  // Get current suggestions from state
+  const currentSuggestions = activeChatId ? (aiSuggestionsMap[activeChatId] || []) : [];
 
-  // Aggregate all suggestions for Action Center
-  const allSuggestions = Object.keys(MOCK_AI_SUGGESTIONS).flatMap(chatId => {
+  // Aggregate all suggestions for Action Center from state
+  const allSuggestions = Object.keys(aiSuggestionsMap).flatMap(chatId => {
     const chat = chats.find(c => c.id === chatId);
-    return MOCK_AI_SUGGESTIONS[chatId].map(suggestion => ({
+    return aiSuggestionsMap[chatId].map(suggestion => ({
       chatId,
       contactName: chat?.contact.name || 'Unknown',
       contactAvatar: chat?.contact.avatar,
@@ -37,20 +44,30 @@ const App: React.FC = () => {
     }));
   });
 
+  const chatsWithSuggestions = new Map(
+    Object.keys(aiSuggestionsMap)
+      .filter(id => aiSuggestionsMap[id].length > 0)
+      .map(id => [id, aiSuggestionsMap[id].map(s => ({ type: s.actionType, priority: s.priority }))])
+  );
+
+  const hasAnySuggestions = allSuggestions.length > 0;
+
   // Handlers
-  const handleSendMessage = (text: string) => {
-    if (!activeChatId) return;
+  const handleSendMessage = (text: string, chatId?: string, type: MessageType = MessageType.TEXT, payload?: any) => {
+    const targetChatId = chatId || activeChatId;
+    if (!targetChatId) return;
 
     const newMessage: Message = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(),
       content: text,
       sender: MessageSender.USER,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      type: MessageType.TEXT
+      type: type,
+      payload: payload
     };
 
     setChats(prevChats => prevChats.map(chat => {
-      if (chat.id === activeChatId) {
+      if (chat.id === targetChatId) {
         return {
           ...chat,
           messages: [...chat.messages, newMessage]
@@ -60,48 +77,98 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleAIAccept = (id: string, action: ActionType, payload: any) => {
+  const removeSuggestion = (chatId: string, suggestionId: string) => {
+    setAiSuggestionsMap(prev => {
+      const newMap = { ...prev };
+      if (newMap[chatId]) {
+        newMap[chatId] = newMap[chatId].filter(s => s.id !== suggestionId);
+      }
+      return newMap;
+    });
+  };
+
+  const handleAIAccept = (id: string, action: ActionType, payload: any, options?: { navigate?: boolean, chatId?: string }) => {
     // Find suggestion across all chats if needed, or use current
     let suggestion = currentSuggestions.find(s => s.id === id);
+    let targetChatId = options?.chatId || activeChatId;
 
     if (!suggestion) {
       // Search in all suggestions
       const found = allSuggestions.find(s => s.suggestion.id === id);
-      if (found) suggestion = found.suggestion;
+      if (found) {
+        suggestion = found.suggestion;
+        targetChatId = found.chatId;
+      }
     }
+
+    if (!targetChatId) return;
 
     if (action === ActionType.SCHEDULE_FOLLOWUP) {
       // Open Modal
       setActiveSuggestion(suggestion || null);
       setScheduleModalOpen(true);
+    } else if (action === ActionType.ESCALATE) {
+      // Open Escalation Modal
+      setActiveSuggestion(suggestion || null);
+      setEscalationModalOpen(true);
     } else if (action === ActionType.SEND_TEMPLATE) {
       // Direct Action
-      // Check if it's a PDF template and send a PDF message type if possible, or formatted text
-      // For now, we'll send a formatted text that ChatWindow will render specially
-      handleSendMessage(`[SYSTEM: Sent Template - ${payload.templateName}]`);
+      // Check if it's a PDF template and send a PDF message type if possible
+      const templateName = payload.templateName || 'Document.pdf';
+      if (templateName.toLowerCase().endsWith('.pdf') || templateName.includes('Catalog') || templateName.includes('Brochure')) {
+        handleSendMessage(templateName, targetChatId, MessageType.PDF);
+      } else {
+        handleSendMessage(`[SYSTEM: Sent Template - ${templateName}]`, targetChatId);
+      }
+      // Remove suggestion immediately for direct actions
+      removeSuggestion(targetChatId, id);
     }
   };
 
   const handleGlobalAccept = (chatId: string, suggestionId: string, action: ActionType, payload: any) => {
-    setActiveChatId(chatId); // Switch to that chat
-    handleAIAccept(suggestionId, action, payload);
+    if (action === ActionType.SCHEDULE_FOLLOWUP || action === ActionType.ESCALATE) {
+      handleAIAccept(suggestionId, action, payload, { navigate: false, chatId });
+    } else {
+      handleAIAccept(suggestionId, action, payload, { navigate: false, chatId });
+    }
   };
 
   const handleGlobalDismiss = (chatId: string, suggestionId: string) => {
     console.log(`Dismissed suggestion ${suggestionId} for chat ${chatId}`);
-    // In real app, update state to remove suggestion
+    removeSuggestion(chatId, suggestionId);
   };
 
   const handleConfirmSchedule = (details: any) => {
-    handleSendMessage(`[SYSTEM: Scheduled Call for ${details.date} at ${details.time}]`);
+    if (activeSuggestion) {
+      // Find which chat this suggestion belongs to
+      const found = allSuggestions.find(s => s.suggestion.id === activeSuggestion.id);
+      if (found) {
+        handleSendMessage(`Scheduled Call`, found.chatId, MessageType.SCHEDULE, details);
+        removeSuggestion(found.chatId, activeSuggestion.id);
+      }
+    }
     setScheduleModalOpen(false);
-    // Here we would update the backend to remove the suggestion
+  };
+
+  const handleConfirmEscalation = (note: string) => {
+    if (activeSuggestion) {
+      const found = allSuggestions.find(s => s.suggestion.id === activeSuggestion.id);
+      if (found) {
+        handleSendMessage(`[SYSTEM: Ticket Escalated. Note: ${note}]`, found.chatId, MessageType.TEXT);
+        removeSuggestion(found.chatId, activeSuggestion.id);
+      }
+    }
+    setEscalationModalOpen(false);
   };
 
   return (
     <div className="flex h-screen w-screen bg-gray-50 overflow-hidden font-sans text-gray-900">
       {/* 1. Left Sidebar (Navigation) */}
-      <Sidebar />
+      <Sidebar
+        activeView={activeView}
+        onViewChange={setActiveView}
+        hasSuggestions={hasAnySuggestions}
+      />
 
       {/* 2. Left Panel (Tabs: Messages / Action Center) */}
       <LeftPanel
@@ -111,13 +178,15 @@ const App: React.FC = () => {
         allSuggestions={allSuggestions}
         onAcceptAction={handleGlobalAccept}
         onDismissAction={handleGlobalDismiss}
+        activeView={activeView}
+        chatsWithSuggestions={chatsWithSuggestions}
       />
 
       {/* 3. Main Chat Window */}
       <ChatWindow
         chat={activeChat}
         aiSuggestions={currentSuggestions}
-        onSendMessage={handleSendMessage}
+        onSendMessage={(text) => handleSendMessage(text)}
         onAIAccept={handleAIAccept}
         onProfileClick={() => setRightPanelOpen(!isRightPanelOpen)}
       />
@@ -130,6 +199,13 @@ const App: React.FC = () => {
         isOpen={isScheduleModalOpen}
         onClose={() => setScheduleModalOpen(false)}
         onConfirm={handleConfirmSchedule}
+        suggestion={activeSuggestion}
+      />
+
+      <EscalationModal
+        isOpen={isEscalationModalOpen}
+        onClose={() => setEscalationModalOpen(false)}
+        onConfirm={handleConfirmEscalation}
         suggestion={activeSuggestion}
       />
 

@@ -1,8 +1,9 @@
 
 export enum MessageType {
     TEXT = 'text',
-    TEMPLATE = 'template',
-    IMAGE = 'image'
+    IMAGE = 'image',
+    PDF = 'pdf',
+    SCHEDULE = 'schedule'
 }
 
 export enum MessageSender {
@@ -18,6 +19,7 @@ export interface Message {
     timestamp: string;
     type: MessageType;
     isRead?: boolean;
+    payload?: any; // For structured messages like schedule details
 }
 
 export enum LeadStage {
