@@ -24,9 +24,6 @@ const RightPanel: React.FC<RightPanelProps> = ({ contact }) => {
                 <div className="flex flex-col items-center mb-6">
                     <div className="relative mb-3">
                         <img src={contact.avatar} alt={contact.name} className="w-20 h-20 rounded-full object-cover border-2 border-emerald-100 p-1" />
-                        <button className="absolute bottom-0 right-0 bg-white shadow-md rounded-full p-1.5 text-gray-600 hover:text-emerald-600 border border-gray-100">
-                            <Edit2 size={12} />
-                        </button>
                     </div>
                     <h2 className="text-lg font-bold text-gray-900">{contact.name}</h2>
                     <span className="text-sm text-gray-500">Whatsapp Name: {contact.name.split(' ')[0]}</span>

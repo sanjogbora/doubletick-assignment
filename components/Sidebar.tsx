@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, MessageSquare, Users, BarChart2, Settings, BookOpen, HelpCircle, Zap, Sparkle } from 'lucide-react';
+import { Home, MessageSquare, Users, BarChart2, Settings, BookOpen, HelpCircle, CheckCheck, Sparkle } from 'lucide-react';
 
 interface SidebarProps {
   activeView?: 'MESSAGES' | 'ACTIONS';
@@ -12,7 +12,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView = 'MESSAGES', onViewChange
     <div className="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-4 h-full flex-shrink-0 z-20">
       <div className="mb-8">
         <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-          <Zap size={24} />
+          <CheckCheck size={24} />
         </div>
       </div>
 

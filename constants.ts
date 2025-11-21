@@ -62,7 +62,7 @@ export const MOCK_CHATS: Chat[] = [
         id: 'chat_2',
         contact: {
             id: 'c2',
-            name: 'Rahul Sharma',
+            name: 'Priya Singh',
             phone: '+91 99887 77665',
             leadStage: LeadStage.NEW,
             tags: ['New Lead'],
@@ -87,7 +87,7 @@ export const MOCK_CHATS: Chat[] = [
         id: 'chat_3',
         contact: {
             id: 'c3',
-            name: 'Priya Singh',
+            name: 'Rahul Sharma',
             phone: '+91 88776 66554',
             leadStage: LeadStage.WARM,
             tags: ['Follow-up'],
@@ -318,7 +318,7 @@ export const MOCK_PROACTIVE_SUGGESTIONS = [
     },
     {
         chatId: 'chat_3', // Priya
-        contactName: 'Priya Singh',
+        contactName: 'Rahul Sharma',
         contactAvatar: 'https://i.pravatar.cc/150?u=priya',
         suggestion: {
             id: 'pro_4',
